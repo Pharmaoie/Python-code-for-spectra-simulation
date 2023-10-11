@@ -1,0 +1,140 @@
+import sys
+import imp
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+# Define the gaussBand function
+def gaussBand(x, bands, strengths, stdev):
+    "Produces a Gaussian summation curve for all bands in the set"
+    bandshape = np.zeros_like(x)
+    for band, strength in zip(bands, strengths):
+        bandshape += 1.3062974e8 * (strength / (stdev)) * np.exp(-(((x - band) / (stdev))**2))
+    return bandshape
+
+# Adjust the following three variables to change which area of the spectrum is plotted and the number of points used
+# in plotting the curves
+start = 16
+finish = 22
+points = 300
+
+# A sqrt(2) * standard deviation of 0.4 eV is 3099.6 nm. 0.1 eV is 12398.4 nm. 0.2 eV is 6199.2 nm.
+stdev = 0.1
+# For Lorentzians, gamma is half bandwidth at half peak height (nm)
+gamma = 12.5
+
+# Constant value to subtract from energies in cm^-1
+constant_value_cm_inv = 3200
+
+# Sample data for four data sets in E
+data_sets = [
+#    {
+#        'energies_eV': np.array([2.551590099, 2.793988119]),
+#        'deviations_x_eV': np.array([0.03465419, 0.030142094]),
+#        'intensities': np.array([0.159191089, 2.322032673]) * 0.1,  # Apply a scaling factor of 2.0 to intensity values
+#        'deviations_y': np.array([0.334073096, 0.300890817]),
+#        'label': 'Antiparallel',
+#    },
+#   {
+#        'energies_eV': np.array([2.66060198, 2.728838614]),
+#        'deviations_x_eV': np.array([0.037800413, 0.033627602]),
+#        'intensities': np.array([1.093337624, 1.359975248]) * 0.66,  # Apply a scaling factor of 2.0 to intensity values
+#        'deviations_y': np.array([0.263125751, 0.259619246]),
+#        'label': 'Orthogonal',
+#    },
+#   {
+#        'energies_eV': np.array([2.649180198, 2.787840594]),
+#        'deviations_x_eV': np.array([0.028507301, 0.028361566]),
+#        'intensities': np.array([0.560920792, 1.85229901]) * 0.1,  # Apply a scaling factor of 2.0 to intensity values
+#        'deviations_y': np.array([0.161034175, 0.2375442]),
+#        'label': 'Twisted',
+#    },
+    {
+        'energies_eV': np.array([2.617742574, 2.767926733]),
+        'deviations_x_eV': np.array([0.030195074, 0.027459475]),
+        'intensities': np.array([2.099428713, 0.827045545]) * 0.4,  # Apply a scaling factor of 2.0 to intensity values
+        'deviations_y': np.array([0.180002713, 0.15452337]),
+        'label': 'Isolated',
+    },
+]
+
+# Sample additional data
+additional_data = {
+    'energies_eV': np.array([17.2106996545907, 17.3081853964173, 17.3926620612097, 17.4445336974857, 17.4860310065065, 17.5216001285243, 17.5571692505422, 17.59273837256, 17.6283074945778, 17.6638766165957, 17.7053739256165, 17.7485650023524, 17.81208129167, 17.9162480061508, 18.0432805847859, 18.1737006988513, 18.3041208129167, 18.434540926982, 18.5590328540445, 18.6835247811069, 18.8139448951723, 18.9443650092376, 19.0688569363001, 19.1933488633625, 19.3356253514338, 19.4660454654992, 19.5727528315527, 19.6498192625913, 19.720957506627, 19.7920957506627, 19.8454494336894, 19.9462286127399, 20.1270383163306, 20.2722788979034, 20.4026990119688, 20.5331191260342, 20.6161137440758, 20.8354566631858, 20.9431279620853, 21.0284360189573, 21.1042654028436, 21.21327014218, 21.2843601895734, 21.345971563981, 21.4123222748815, 21.4786729857819, 21.5497630331753, 21.6445497630331, 21.7345971563981, 21.7962085308056, 21.8909952606635, 22.0047393364928, 22.0805687203791, 22.170616113744, 22.2274881516587
+]),  
+# Example energies, not matching existing data
+    'intensities': np.array([0.0741435899591831, 0.132550522553915, 0.2032515232241, 0.273685102507952, 0.348638808957368, 0.41824283450309, 0.496614482415357, 0.575473220459099, 0.653844868371366, 0.723448893917088, 0.797915510235029, 0.874258528333652, 0.953634762541449, 0.995100148525878, 0.977045225062008, 0.935681136556266, 0.897505274365631, 0.845779450335789, 0.77947580145686, 0.724809178628071, 0.704434246696786, 0.729225854229521, 0.779930111115031, 0.846841185102337, 0.928207188643173, 0.947685085650729, 0.903849204353227, 0.838053583855776, 0.764890337624235, 0.69221418152417, 0.65073672546607, 0.550741969290781, 0.432490913393936, 0.367094719096223, 0.329981599010624, 0.302698843396606, 0.291158018172086, 0.241167334688144, 0.222839615537936, 0.206364884617088, 0.185230544359303, 0.159376799397617, 0.145258448863887, 0.131153386189484, 0.124051025379811, 0.105266421579483, 0.0958209682420163, 0.0840058466581035, 0.0745338176019843, 0.0674381007219737, 0.0486136333436686, 0.0437812818354965, 0.0436749789608896, 0.0365393985029014, 0.0364596713469462
+]),
+# Corresponding intensities
+    'label': 'EXP',
+}
+
+# Create a stick spectra plot with uncertainty in both X and Y axes for data sets
+fig, ax1 = plt.subplots(figsize=(10, 6))  # Adjust figure size as needed
+
+colors = ['b', 'g', 'r', 'c']  # Add colors for each dataset
+
+# Create the secondary y-axis (ax2) outside of the loop
+ax2 = ax1.twinx()
+
+# Define custom font properties for axis labels and legends
+axis_label_font = FontProperties(family='serif', size=35)
+legend_font = FontProperties(family='sans-serif', size=30)
+tick_label_font = FontProperties(family='sans-serif', size=35)  # Define font properties for tick labels
+
+for i, dataset in enumerate(data_sets):
+    energies_eV = dataset['energies_eV']
+    intensities = dataset['intensities']
+    deviations_x_eV = dataset['deviations_x_eV']
+    deviations_y = dataset['deviations_y']
+    label = dataset['label']
+
+    # Convert energies from eV to inverse cm (cm^-1)
+    energies_cm_inv = (((energies_eV * 8065.54445) - constant_value_cm_inv) / 1000)  # Convert and subtract the constant
+
+    # Convert deviations from eV to inverse cm (cm^-1)
+    deviations_x_cm_inv = ((deviations_x_eV * 8065.54445) / 1000)  # Adjust the deviations
+
+    # Use different colors for the error bars of the first and second bands, and unify the colors for the rest
+    error_bar_color1 = colors[i]
+    error_bar_color2 = 'k'  # Use black for the second band
+    stick_color = colors[i]
+
+    # Plot the spectral lines as sticks on the primary y-axis (ax1)
+    ax2.stem(energies_cm_inv, intensities, basefmt=" ", linefmt=f"{stick_color}-", markerfmt=f"{stick_color}o", label=label, bottom=0)
+
+    # Add deviation ranges as error bars for both X and Y axes with different colors
+    ax2.errorbar(energies_cm_inv, intensities, xerr=deviations_x_cm_inv, yerr=deviations_y, fmt="none", elinewidth=2, capsize=5, color=error_bar_color1)
+    ax2.errorbar(energies_cm_inv, intensities, xerr=deviations_x_cm_inv, yerr=deviations_y, fmt="none", elinewidth=2, capsize=5, color=error_bar_color2)
+
+    # Create Gaussian curve for this dataset and plot it on the secondary y-axis (ax2)
+    x = np.linspace(start, finish, points)
+    thispeak = gaussBand(x, energies_cm_inv, intensities, stdev)
+    
+    ax1.plot(x, thispeak, label=f'{label} (Gaussian Summation)', linestyle='solid', color=stick_color)
+
+# Plot additional data as a scatter plot
+ax2.plot(additional_data['energies_eV'], additional_data['intensities'], label=additional_data['label'], color='m', marker='o')
+
+# Customize the plot appearance
+ax1.set_xlabel('Energy (cm$^{-1}$/1000)', fontproperties=axis_label_font)
+ax2.set_ylabel('Oscillator Strength (f)', fontproperties=axis_label_font)
+ax1.set_ylabel('Absorbance [Arbitrary Units]', fontproperties=axis_label_font)
+ax1.set_title(f'Ensemble Average Vertical Excitation Spectra\nShift Value: {constant_value_cm_inv}, intensity scaling factor = 0.4', fontproperties=axis_label_font)
+
+# Set the lower limit of the y-axis to zero
+ax1.set_ylim(bottom=0)
+ax2.set_ylim(bottom=0)
+
+# Combine the legends from both axes and set loc to 'upper left'
+lines1, labels1 = ax1.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax1.legend(lines2,labels2, loc='upper left', prop=legend_font)
+#ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', prop=legend_font)
+
+# Customize the tick label fonts for both x and y axes
+ax1.tick_params(axis='both', which='major', labelsize=35)  # Adjust the size of tick labels
+ax2.tick_params(axis='both', which='major', labelsize=35)  # Adjust the size of tick labels
+
+# Display the plot without the background grid
+plt.show()
